@@ -1,0 +1,23 @@
+version: '3'
+services:
+  nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongodb
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/files
+
+  mongodb:
+    image: mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  mongodb-data:
+
