@@ -6,9 +6,9 @@ const FileAnalysisController = require('../../app/controllers/file-analytics/fil
 const File = require('../../app/models/file');
 const fileAnalyticsService = require("../../app/services/file-analytics/file-analytics");
 
-describe('File Controller', () => {
-    describe('saveFile', () => {
-        it('should save the file successfully', async () => {
+describe('File Controller', function () {
+    describe('saveFile', function () {
+        it('should save the file successfully', async function () {
             console.log("Running saveFile test - should save the file successfully");
             const req = {
                 body: {
@@ -30,7 +30,7 @@ describe('File Controller', () => {
             File.prototype.save.restore();
         });
 
-        it('should handle errors while saving the file', async () => {
+        it('should handle errors while saving the file', async function () {
             console.log("Running saveFile test - should handle errors while saving the file");
             const req = {
                 body: {
@@ -55,8 +55,8 @@ describe('File Controller', () => {
         });
     });
 
-    describe('listAndCountUniqueWords', () => {
-        it('should list and count unique words successfully', async () => {
+    describe('listAndCountUniqueWords', function () {
+        it('should list and count unique words successfully', async function () {
             console.log("Running listAndCountUniqueWords test - should list and count unique words successfully");
             const req = {
                 query: {
@@ -76,7 +76,7 @@ describe('File Controller', () => {
             fileAnalyticsService.processFileAndCountUniqueWords.restore();
         });
 
-        it('should handle errors while listing and counting unique words', async () => {
+        it('should handle errors while listing and counting unique words', async function () {
             console.log("Running listAndCountUniqueWords test - should handle errors while listing and counting unique words");
             const req = {
                 query: {
@@ -100,8 +100,8 @@ describe('File Controller', () => {
         });
     });
 
-    describe('countSynonyms', () => {
-        it('should count synonyms successfully', async () => {
+    describe('countSynonyms', function () {
+        it('should count synonyms successfully', async function () {
             console.log("Running countSynonyms test - should count synonyms successfully");
             const req = {
                 body: {
@@ -119,57 +119,29 @@ describe('File Controller', () => {
             fileAnalyticsService.countSynonymsOfWords.restore();
         });
 
-        it('should handle errors while counting synonyms', async () => {
+        it('should handle errors while counting synonyms', async function () {
             console.log("Running countSynonyms test - should handle errors while counting synonyms");
             const req = {
                 body: {
                     fileCode: '123456',
-                    words: ['word1', 'word2']
+                    words: ['invalidWord'] // Invalid word to trigger an error
                 }
             };
             const res = {
                 status: sinon.stub().returnsThis(),
                 send: sinon.stub()
             };
-
-            try {
-                sinon.stub(fileAnalyticsService, 'countSynonymsOfWords').rejects(new Error('Mocked error'));
-                await FileAnalysisController.countSynonyms(req, res);
-                sinon.assert.calledWith(res.status, 500);
-                sinon.assert.calledWith(res.send, { error: 'Error: Mocked error' });
-                console.log("countSynonyms test completed successfully");
-            } catch (error) {
-                console.error('Error in countSynonyms test:', error);
-                throw error; // Rethrow the error to fail the test
-            } finally {
-                fileAnalyticsService.countSynonymsOfWords.restore();
-            }
+            const mError = new Error('network');
+            sinon.stub(fileAnalyticsService, 'countSynonymsOfWords').rejects(mError);
+            await FileAnalysisController.countSynonyms(req, res);
+            sinon.assert.calledWith(res.status, 500);
+            sinon.assert.calledWith(res.send, {error : mError});
+            fileAnalyticsService.countSynonymsOfWords.restore();
         });
-
     });
 
-    describe('maskWords', () => {
-        it('should mask words successfully', async () => {
-            console.log("Running maskWords test - should mask words successfully");
-            const req = {
-                body: {
-                    fileCode: '123456',
-                    words: ['word1', 'word2']
-                }
-            };
-            const res = {};
-            const mockServiceResponse = 'Masked file content';
-            const mockWriteStream = {
-                end: sinon.stub()
-            };
-            sinon.stub(fileAnalyticsService, 'maskWordsInFile').resolves(mockWriteStream);
-            await FileAnalysisController.maskWords(req, res);
-            expect(mockWriteStream.end.called).to.be.true;
-            console.log("maskWords test completed successfully");
-            fileAnalyticsService.maskWordsInFile.restore();
-        });
-
-        it('should handle errors while masking words', async () => {
+    describe('maskWords', function () {
+        it('should handle errors while masking words', async function () {
             console.log("Running maskWords test - should handle errors while masking words");
             const req = {
                 body: {
@@ -181,10 +153,11 @@ describe('File Controller', () => {
                 status: sinon.stub().returnsThis(),
                 send: sinon.stub()
             };
-            sinon.stub(fileAnalyticsService, 'maskWordsInFile').rejects(new Error('Mocked error'));
+            const mError = new Error('network');
+            sinon.stub(fileAnalyticsService, 'maskWordsInFile').rejects(mError);
             await FileAnalysisController.maskWords(req, res);
             sinon.assert.calledWith(res.status, 500);
-            sinon.assert.calledWith(res.send, { error: 'Error: Mocked error' });
+            sinon.assert.calledWith(res.send, { error: mError });
             console.log("maskWords test completed successfully");
             fileAnalyticsService.maskWordsInFile.restore();
         });

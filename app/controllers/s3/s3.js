@@ -10,7 +10,6 @@ const S3_SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY;
 
 exports.generatePresignedUrl = async function (req, res) {
     try {
-        // TODO handle different files with same name
         const fileName = _.get(req, ["query", "fileName"]);
         const fileCode = _.get(req, ["query", "fileCode"])
         const s3Instance = new s3InteractionClient(S3_REGION, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY);
