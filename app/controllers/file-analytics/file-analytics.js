@@ -47,7 +47,7 @@ exports.listAndCountUniqueWords = async function (req, res) {
         res.status(500).send({
             success: false,
             uniqueWordCount : null,
-            error : error.toString()
+            error : "Error in finding unique words and their counts. Please try again later"
         });
     }
 }
@@ -61,7 +61,7 @@ exports.countSynonyms = async function (req, res) {
         res.send(synonymsCount);
     } catch (error) {
         console.error('Error in countSynonyms:', error);
-        res.status(500).send({ error: error });
+        res.status(500).send({ error: "Error in finding synonyms. Please try again later" });
     }
 }
 
@@ -73,7 +73,7 @@ exports.maskWords = async function (req, res) {
         await fileAnalyticsService.maskWordsInFile(fileCode, wordsToMask, res);
     } catch (error) {
         console.error('Error in maskWords:', error);
-        res.status(500).send({ error: error });
+        res.status(500).send({ error: "Error in masking words. Please try again later" });
     }
 }
 
