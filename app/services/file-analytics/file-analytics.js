@@ -90,11 +90,11 @@ const countSynonymsOfWords = function (fileCode, words) {
             const synonymsAndItsCounts = {};
 
             for (const word of words) {
+                synonymsAndItsCounts[word] = {
+                    "count": _.get(uniqueWords, [word], 0),
+                    "synonyms": {}
+                };
                 if (_.has(uniqueWords, [word])) {
-                    synonymsAndItsCounts[word] = {
-                        "count": _.get(uniqueWords, [word], 0),
-                        "synonyms": {}
-                    };
                     const thesaurusResponse = await axios.get(`https://api.api-ninjas.com/v1/thesaurus?word=${word}`, {
                         headers: {
                             'X-Api-Key': THESAURUS_API_KEY
