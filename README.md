@@ -44,4 +44,36 @@ THESAURUS_API_KEY=<Thesaurus API Key>
 How to start the server :- node server.js
 
 
+FLOW DIAGRAM :- 
+
+                  Start
+                    |
+            Upload Files UI
+                    |
+          +---------+----------+
+          |                    |
+     Fetch Pre-signed URL    Upload Files
+          |                    |
+          |               Upload Complete
+          |                    |
+    Store File Metadata       |
+          |                    |
+         End                  |
+                               |
+          +---------+----------+
+          |                    |
+    File Analysis UI          |
+          |                    |
+    Count Unique Words -------|
+    and Their Counts          |
+          |                    |
+    Find Synonyms             |
+    for Specific Words -------|
+          |                    |
+    Mask Specific Words ------|
+          |                    |
+         End                  |
+
+
+
 
