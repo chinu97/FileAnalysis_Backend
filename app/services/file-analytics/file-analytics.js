@@ -50,11 +50,12 @@ const processFileAndCountUniqueWords = async function (fileCode) {
                 let currentLine = '';
                 s3ObjectStream.on('data', (chunk) => {
                     currentLine += chunk.toString();
-                    const lines = currentLine.split(/\r?\n/); // Split into lines
-
-                    for (let i = 0; i < lines.length - 1; i++) {
-                        const words = lines[i].split(/\s+/); // Split into words
-                        countWords(words, wordCounts);
+                    const lines = currentLine.split(/\r?\n/);
+                    for (let i = 0; i < lines.length; i++) {
+                        const words = lines[i].match(/\b\w+\b/g);
+                        if (words) {
+                            countWords(words, wordCounts);
+                        }
                     }
                     currentLine = lines[lines.length - 1];
                 });
@@ -128,11 +129,12 @@ async function streamToPromise(stream) {
 
 function maskWords(content, wordsToMask) {
     for (const word of wordsToMask) {
-        const regex = new RegExp(word, 'gi');
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
         content = content.replace(regex, '*'.repeat(word.length));
     }
     return content;
 }
+
 
 function streamModifiedContent(content, res) {
     const readStream = Readable.from(content);
