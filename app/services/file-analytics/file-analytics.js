@@ -10,7 +10,7 @@ const _ = require("lodash");
 const UniqueWords = require("../../models/unique-words");
 const axios = require('axios');
 const THESAURUS_API_KEY = process.env.THESAURUS_API_KEY;
-const {Readable} = require('stream');
+const {Transform} = require('stream');
 
 function countWords(words, wordCounts) {
     for (const word of words) {
@@ -122,14 +122,6 @@ const countSynonymsOfWords = function (fileCode, words) {
     });
 };
 
-async function streamToPromise(stream) {
-    const chunks = [];
-    for await (const chunk of stream) {
-        chunks.push(chunk);
-    }
-    return Buffer.concat(chunks);
-}
-
 function maskWords(content, wordsToMask) {
     for (const word of wordsToMask) {
         const regex = new RegExp(`\\b${word}\\b`, 'gi');
@@ -138,12 +130,15 @@ function maskWords(content, wordsToMask) {
     return content;
 }
 
-
-function streamModifiedContent(content, res) {
-    const readStream = Readable.from(content);
-    res.setHeader('Content-Disposition', 'attachment; filename="modified-file.txt"');
-    res.setHeader('Content-Type', 'text/plain');
-    readStream.pipe(res);
+function createMaskTransform(wordsToMask) {
+    return new Transform({
+        transform(chunk, encoding, callback) {
+            let modifiedChunk = chunk.toString();
+            modifiedChunk = maskWords(modifiedChunk, wordsToMask);
+            this.push(modifiedChunk);
+            callback();
+        }
+    });
 }
 
 const maskWordsInFile = function (fileCode, wordsToMask, res) {
@@ -155,12 +150,8 @@ const maskWordsInFile = function (fileCode, wordsToMask, res) {
             const s3ObjectKey = `${fileName}_${fileCode}`;
             const s3Instance = new s3InteractionClient(S3_REGION, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY);
             const s3ObjectStream = await s3Instance.downloadFile(S3_BUCKET_NAME, s3ObjectKey);
-            const fileContent = (await streamToPromise(s3ObjectStream)).toString();
-
-            const maskedContent = maskWords(fileContent, wordsToMask);
-
-            streamModifiedContent(maskedContent, res);
-
+            const maskTransform = createMaskTransform(wordsToMask);
+            s3ObjectStream.pipe(maskTransform).pipe(res);
             resolve();
         } catch (error) {
             console.error('Error in masking words in file:', error);
