@@ -10,21 +10,24 @@ const _ = require("lodash");
 const UniqueWords = require("../../models/unique-words");
 const axios = require('axios');
 const THESAURUS_API_KEY = process.env.THESAURUS_API_KEY;
-const { Readable } = require('stream');
+const {Readable} = require('stream');
 
 function countWords(words, wordCounts) {
     for (const word of words) {
-        wordCounts.set(word.toLowerCase(), (wordCounts.get(word) || 0) + 1);
+        if (word !== '') { // Check if the word is not empty
+            const lowercaseWord = word.toLowerCase();
+            wordCounts.set(lowercaseWord, (wordCounts.get(lowercaseWord) || 0) + 1);
+        }
     }
 }
 
-const saveUniqueWordCountDetails = async function (wordCounts, fileDetails){
+const saveUniqueWordCountDetails = async function (wordCounts, fileDetails) {
     const fileCode = _.get(fileDetails, ["code"]);
     const fileName = _.get(fileDetails, ["fileName"]);
     const uniqueWordCountDetails = {
-        code : fileCode,
-        fileName : fileName,
-        uniqueWords : JSON.stringify(wordCounts)
+        code: fileCode,
+        fileName: fileName,
+        uniqueWords: JSON.stringify(wordCounts)
     };
     const newUniqueWordCountDoc = new UniqueWords(uniqueWordCountDetails);
     await newUniqueWordCountDoc.save();
@@ -36,11 +39,11 @@ const processFileAndCountUniqueWords = async function (fileCode) {
         try {
             console.log(`Processing file with code ${fileCode}`);
             const fileDetails = await utils.getFile(fileCode);
-            if (_.isEmpty(fileDetails)){
+            if (_.isEmpty(fileDetails)) {
                 return reject(new Error(`No file found with fileCode ${fileCode}`));
             }
-            const uniqueWordsCountDetails =  await utils.getUniqueWords(fileCode);
-            if (_.isEmpty(uniqueWordsCountDetails)){
+            const uniqueWordsCountDetails = await utils.getUniqueWords(fileCode);
+            if (_.isEmpty(uniqueWordsCountDetails)) {
                 console.log('Fetching file from S3 bucket...');
                 const fileName = _.get(fileDetails, ["fileName"]);
                 const s3ObjectKey = `${fileName}_${fileCode}`;
@@ -51,8 +54,8 @@ const processFileAndCountUniqueWords = async function (fileCode) {
                 s3ObjectStream.on('data', (chunk) => {
                     currentLine += chunk.toString();
                     const lines = currentLine.split(/\r?\n/);
-                    for (let i = 0; i < lines.length; i++) {
-                        const words = lines[i].match(/\b\w+\b/g);
+                    for (let i = 0; i < lines.length - 1; i++) {
+                        const words = lines[i].match(/\b[\w']+\b/g); // Updated regex to include apostrophes
                         if (words) {
                             countWords(words, wordCounts);
                         }
