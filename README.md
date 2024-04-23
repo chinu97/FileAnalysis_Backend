@@ -36,10 +36,10 @@ PORT=3000;
 S3_BUCKET_NAME=<S3 bucket name>;
 S3_PRESIGNED_URL_EXPIRATION_TIME=36000;
 S3_REGION=<S3 Region>;
-S3_ACCESS_KEY=<S3 Access Key>;
-S3_SECRET_ACCESS_KEY=<S3 Secret Access Key>
-THESAURUS_API_KEY=<Thesaurus API Key>
-
+S3_ACCESS_KEY=<S3 Access Key>; // Please contact me for this key
+S3_SECRET_ACCESS_KEY=<S3 Secret Access Key> // Please contact me for this key
+THESAURUS_API_KEY=<Thesaurus API Key> // Please contact me for this key
+I am using s3 to upload the files, Please contact me for S3 access keys and bucket details if required
 
 How to start the server :- node server.js
 
