@@ -86,41 +86,44 @@ const processFileAndCountUniqueWords = async function (fileCode) {
     });
 };
 
-const countSynonymsOfWords = function (fileCode, words) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log(`Counting synonyms of words in file with code ${fileCode}`);
-            const uniqueWords = await processFileAndCountUniqueWords(fileCode);
-            const synonymsAndItsCounts = {};
+const countSynonymsOfWords = async function (fileCode, words) {
+    try {
+        console.log(`Counting synonyms of words in file with code ${fileCode}`);
+        const uniqueWords = await processFileAndCountUniqueWords(fileCode);
+        const synonymPromises = words.map(async (word) => {
+            const synonymsAndCount = {
+                count: _.get(uniqueWords, [word], 0),
+                synonyms: {}
+            };
 
-            for (const word of words) {
-                synonymsAndItsCounts[word] = {
-                    "count": _.get(uniqueWords, [word], 0),
-                    "synonyms": {}
-                };
-                if (_.has(uniqueWords, [word])) {
-                    const thesaurusResponse = await axios.get(`https://api.api-ninjas.com/v1/thesaurus?word=${word}`, {
-                        headers: {
-                            'X-Api-Key': THESAURUS_API_KEY
-                        }
-                    });
+            if (_.has(uniqueWords, [word])) {
+                const thesaurusResponse = await axios.get(`https://api.api-ninjas.com/v1/thesaurus?word=${word}`, {
+                    headers: {
+                        'X-Api-Key': THESAURUS_API_KEY
+                    }
+                });
 
-                    const synonyms = _.get(thesaurusResponse, ["data", "synonyms"]);
+                const synonyms = _.get(thesaurusResponse, ["data", "synonyms"]);
 
-                    _.each(synonyms, (synonym) => {
-                        if (_.has(uniqueWords, [synonym])) {
-                            _.set(synonymsAndItsCounts, [word, "synonyms", synonym], _.get(uniqueWords, [synonym], 0));
-                        }
-                    });
-                }
+                await Promise.all(synonyms.map(async (synonym) => {
+                    if (_.has(uniqueWords, [synonym])) {
+                        _.set(synonymsAndCount, ['synonyms', synonym], _.get(uniqueWords, [synonym], 0));
+                    }
+                }));
             }
-            resolve(synonymsAndItsCounts);
-        } catch (error) {
-            console.error('Error in counting synonyms of words:', error);
-            reject(error);
-        }
-    });
+
+            return { [word]: synonymsAndCount };
+        });
+
+        const synonymResults = await Promise.all(synonymPromises);
+        const synonymsAndItsCounts = Object.assign({}, ...synonymResults);
+        return synonymsAndItsCounts;
+    } catch (error) {
+        console.error('Error in counting synonyms of words:', error);
+        throw error;
+    }
 };
+
 
 function maskWords(content, wordsToMask) {
     for (const word of wordsToMask) {
